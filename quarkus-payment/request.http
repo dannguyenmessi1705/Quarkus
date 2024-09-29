@@ -1,0 +1,12 @@
+### GET request to example server
+GET http://localhost:8080/transaction/query/all
+
+### POST request to example server
+POST http://localhost:8080/transaction/transfer
+Content-Type: application/json
+
+{
+  "receiverAccount": "234271242",
+  "amount": 10000,
+  "content": "test"
+}
