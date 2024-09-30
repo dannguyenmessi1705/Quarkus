@@ -12,9 +12,11 @@ public class TransferRequestDTO {
   @NotBlank(message = "Account number is mandatory")
   private String receiverAccount;
 
-  @NotBlank(message = "Amount is mandatory")
   @Positive(message = "Amount must be positive")
   private Integer amount;
 
   private String content;
+
+  @NotBlank(message = "PIN code is mandatory")
+  private String pinCode;
 }

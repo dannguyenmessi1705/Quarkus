@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class AccountRequestDto {
+public class AccountRequestDTO {
   @NotBlank(message = "Account number is mandatory")
   private String accountNumber;
 

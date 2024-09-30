@@ -2,9 +2,9 @@ package org.didan.repository;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.didan.entity.TransactionEntity;
+import org.didan.entity.AccountEntity;
 
 @ApplicationScoped
-public class TransactionRepository implements PanacheRepositoryBase<TransactionEntity, Long> {
+public class AccountRepository implements PanacheRepositoryBase<AccountEntity, String> {
 
 }

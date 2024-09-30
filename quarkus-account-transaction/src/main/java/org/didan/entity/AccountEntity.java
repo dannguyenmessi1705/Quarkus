@@ -5,8 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.validation.constraints.NotEmpty;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,8 +22,10 @@ public class AccountEntity {
   private String accountNumber;
 
   @Column(name = "name", nullable = false)
-  @NotEmpty
   private String name;
+
+  @Column(name = "pin_code", nullable = false)
+  private String pinCode;
 
   @Column(name = "balance")
   private Double balance;

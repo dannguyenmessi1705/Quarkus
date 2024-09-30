@@ -6,6 +6,15 @@ import lombok.Data;
 
 @Data
 public class TransferRequestDTO {
+  @NotBlank(message = "Request id is mandatory")
+  private String requestId;
+
+  @NotBlank(message = "Pin code is mandatory")
+  private String pinCode;
+
+  @NotBlank(message = "Transaction id is mandatory")
+  private String transactionId;
+
   @NotBlank(message = "Account number is mandatory")
   private String senderAccount;
 
@@ -15,6 +24,9 @@ public class TransferRequestDTO {
   @NotBlank(message = "Amount is mandatory")
   @Positive(message = "Amount must be positive")
   private Integer amount;
+
+  @NotBlank(message = "Type is mandatory")
+  private Integer type;
 
   private String content;
 }

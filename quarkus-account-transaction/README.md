@@ -15,6 +15,7 @@ classDiagram
     class Account {
         id: integer,
         account_number: string,
+        pin_code: string,
         name: string,
         balance: double
     }
