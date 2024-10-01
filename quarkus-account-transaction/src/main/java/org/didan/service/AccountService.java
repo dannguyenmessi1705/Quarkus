@@ -34,8 +34,8 @@ public class AccountService {
       if (account == null) {
         log.info("Verify account failed");
         return false;
-      }
-    } else return true;
+      } else return true;
+    }
     return false;
   }
 
@@ -54,10 +54,10 @@ public class AccountService {
   @Transactional
   public boolean transfer(TransferRequestDTO requestDTO) {
     if (requestDTO.getType() == 1) {
-      log.info("Deduction account sender: {}", requestDTO.getSenderAccount());
+      log.info("Deduct account sender: {}", requestDTO.getSenderAccount());
       AccountEntity account = accountRepository.find("accountNumber = ?1", requestDTO.getSenderAccount()).firstResult();
       if (account == null) {
-        log.info("Deduction account failed");
+        log.info("Deduct account failed");
         return false;
       }
       account.setBalance(account.getBalance() - Double.parseDouble(requestDTO.getAmount().toString()));

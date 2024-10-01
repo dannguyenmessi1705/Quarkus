@@ -1,4 +1,4 @@
-package org.didan.entity;
+package com.didan.spring_payment.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 @Entity(name = "transaction")
 public class TransactionEntity {
   @Id
-  @Column(name = "transaction_id")
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long transactionId;
 

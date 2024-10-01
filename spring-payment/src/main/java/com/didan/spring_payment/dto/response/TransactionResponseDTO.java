@@ -1,4 +1,4 @@
-package org.didan.dto.response;
+package com.didan.spring_payment.dto.response;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,52 +1,42 @@
-package org.didan.service;
+package com.didan.spring_payment.service;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
+import com.didan.spring_payment.dto.request.AccountRequestDTO;
+import com.didan.spring_payment.dto.request.TransactionRequestDTO;
+import com.didan.spring_payment.dto.request.TransferRequestDTO;
+import com.didan.spring_payment.dto.response.AccountResponseDTO;
+import com.didan.spring_payment.dto.response.GeneralResponse;
+import com.didan.spring_payment.dto.response.TransactionResponseDTO;
+import com.didan.spring_payment.dto.response.TransactionResponseDTO.Details;
+import com.didan.spring_payment.entity.PaymentEntity;
+import com.didan.spring_payment.entity.TransactionEntity;
+import com.didan.spring_payment.exception.ResourceNotFound;
+import com.didan.spring_payment.repository.PaymentRepository;
+import com.didan.spring_payment.repository.TransactionRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.didan.client.AccountTransactionClient;
-import org.didan.config.KafkaProducer;
-import org.didan.dto.request.AccountRequestDTO;
-import org.didan.dto.request.TransactionRequestDTO;
-import org.didan.dto.request.TransferRequestDTO;
-import org.didan.dto.response.AccountResponseDTO;
-import org.didan.dto.response.GeneralResponse;
-import org.didan.dto.response.TransactionResponseDTO;
-import org.didan.dto.response.TransactionResponseDTO.Details;
-import org.didan.entity.PaymentEntity;
-import org.didan.entity.TransactionEntity;
-import org.didan.exception.ResourceNotFound;
-import org.didan.repository.PaymentRepository;
-import org.didan.repository.TransactionRepository;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
 
+@Service
 @Slf4j
 @RequiredArgsConstructor
-@ApplicationScoped
 public class TransactionService {
 
-  @Inject
-  PaymentRepository paymentRepository;
-
-  @Inject
-  TransactionRepository transactionRepository;
-
-  @Inject
-  @RestClient
-  AccountTransactionClient accountTransactionClient;
-
-  @Inject
-  KafkaProducer kafkaProducer;
-
+  private final KafkaTemplate<String, TransactionRequestDTO> kafkaTemplate;
+  private final PaymentRepository paymentRepository;
+  private final TransactionRepository transactionRepository;
+  private final IRestTemplateService restTemplateService;
 
   public List<PaymentEntity> getAll() {
     log.info("Find all transaction");
     // find all payment
-    List<PaymentEntity> transactions = paymentRepository.findAll().stream().toList();
+    List<PaymentEntity> transactions = paymentRepository.findAll();
     log.info("Found {} transactions", transactions.size());
     if (transactions.isEmpty()) {
       log.info("No transaction found");
@@ -55,7 +45,6 @@ public class TransactionService {
     return transactions;
   }
 
-  @Transactional
   public TransactionResponseDTO transfer(TransferRequestDTO requestDTO) {
     if (requestDTO.getSenderAccount().equals(requestDTO.getReceiverAccount())) {
       log.info("Sender and receiver account number is the same");
@@ -67,26 +56,34 @@ public class TransactionService {
     paymentEntity.setReceiverAccount(requestDTO.getReceiverAccount());
     paymentEntity.setContent(requestDTO.getContent());
     paymentEntity.setStatus("PENDING");
-    paymentRepository.persist(paymentEntity);
+    paymentRepository.save(paymentEntity);
     // Request Deduction Sender
     TransactionRequestDTO requestSender = transactionConvertApi(requestDTO, paymentEntity, 1);
     TransactionResponseDTO responseDTO = transactionResponseConvertApi(paymentEntity,
         requestSender);
     responseDTO.setDetails(new ArrayList<>());
-    GeneralResponse<Boolean> isSenderDeducted = accountTransactionClient.transfer(requestSender);
-    if (isSenderDeducted.getData()) {
+    ResponseEntity<GeneralResponse<Boolean>> senderResponse = restTemplateService.processParameterizedType(
+        HttpMethod.POST,
+        "http://localhost:9010/transaction/transfer", null, requestSender,
+        new ParameterizedTypeReference<GeneralResponse<Boolean>>() {});
+    boolean isSenderDeducted = senderResponse.getBody().getData();
+    if (isSenderDeducted) {
       paymentEntity.setStatus("DEDUCTION_SENDER");
-      paymentRepository.persist(paymentEntity);
+      paymentRepository.save(paymentEntity);
       responseDTO.getDetails().add(
           new Details(requestSender.getTransactionId(), requestSender.getSenderAccount(),
               "DEDUCTION_SENDER", responseDTO.getAmount()));
       // Request Add Receiver
       TransactionRequestDTO requestReceiver = transactionConvertApi(requestDTO, paymentEntity, 2);
-      GeneralResponse<Boolean> isReceiverAdded = accountTransactionClient.transfer(requestReceiver);
+      ResponseEntity<GeneralResponse<Boolean>> receiveResponse = restTemplateService.processParameterizedType(
+          HttpMethod.POST,
+          "http://localhost:9010/transaction/transfer", null, requestReceiver,
+          new ParameterizedTypeReference<GeneralResponse<Boolean>>() {});
+      GeneralResponse<Boolean> isReceiverAdded = receiveResponse.getBody();
       if (isReceiverAdded.getData()) {
         log.info("Transfer success");
         paymentEntity.setStatus("SUCCESS");
-        paymentRepository.persist(paymentEntity);
+        paymentRepository.save(paymentEntity);
         responseDTO.getDetails().add(
             new Details(requestReceiver.getTransactionId(), requestReceiver.getReceiverAccount(),
                 "ADD_RECEIVER", responseDTO.getAmount()));
@@ -95,17 +92,17 @@ public class TransactionService {
         responseDTO.getDetails().add(
             new Details(requestReceiver.getTransactionId(), requestReceiver.getReceiverAccount(),
                 "ADD_RECEIVER_FAILED", responseDTO.getAmount()));
-        paymentRepository.persist(paymentEntity);
+        paymentRepository.save(paymentEntity);
         log.error("Add receiver failed, prepare to revert sender");
         TransactionRequestDTO revertSenderBalance = transactionConvertApi(requestDTO, paymentEntity,
             3);
         responseDTO.getDetails().add(new Details(revertSenderBalance.getTransactionId(),
             revertSenderBalance.getSenderAccount(), "REVERT_SENDER", responseDTO.getAmount()));
-        kafkaProducer.sendToKafka(revertSenderBalance);
+        kafkaTemplate.send("payment", revertSenderBalance);
       }
     } else {
       paymentEntity.setStatus("FAILED");
-      paymentRepository.persist(paymentEntity);
+      paymentRepository.save(paymentEntity);
       log.error("Deduction sender failed");
       responseDTO.getDetails().add(
           new Details(requestSender.getTransactionId(), requestSender.getSenderAccount(),
@@ -119,7 +116,7 @@ public class TransactionService {
     TransactionEntity transactionEntity = new TransactionEntity();
     transactionEntity.setPayment(paymentEntity);
     transactionEntity.setTransactionTime(LocalDateTime.now());
-    transactionRepository.persist(transactionEntity);
+    transactionRepository.save(transactionEntity);
     return TransactionRequestDTO.builder()
         .requestId(paymentEntity.getId())
         .transactionId(transactionEntity.getTransactionId())
@@ -146,7 +143,11 @@ public class TransactionService {
 
   public GeneralResponse<AccountResponseDTO> getBalance(AccountRequestDTO accountRequestDTO) {
     log.info("Get balance with account number: {}", accountRequestDTO.getAccountNumber());
-    return accountTransactionClient.balance(accountRequestDTO);
+    ResponseEntity<GeneralResponse<AccountResponseDTO>> response = restTemplateService.processParameterizedType(
+        HttpMethod.POST,
+        "http://localhost:9010/transaction/balance", null, accountRequestDTO,
+        new ParameterizedTypeReference<GeneralResponse<AccountResponseDTO>>() {
+        });
+    return response.getBody();
   }
-
 }

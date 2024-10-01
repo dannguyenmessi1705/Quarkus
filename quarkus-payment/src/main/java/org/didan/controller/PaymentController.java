@@ -31,13 +31,6 @@ public class PaymentController {
   @Inject
   TransactionService transactionService;
 
-  @Inject
-  @RestClient
-  AccountTransactionClient accountTransactionClient;
-
-  @Inject
-  KafkaProducer kafkaProducer;
-
   @GET
   @Path("/query/all")
   public GeneralResponse<List<PaymentEntity>> getAll() {
@@ -65,38 +58,5 @@ public class PaymentController {
     GeneralResponse<AccountResponseDTO> response = transactionService.getBalance(requestDTO);
     return response;
   }
-
-//  @POST
-//  @Path("/info")
-//  public Response info(@Valid AccountRequestDTO requestDTO) {
-//    log.info("Info request: {}", requestDTO);
-//    return Response.ok().build();
-//  }
-
-//  @GET
-//  @Path("/test")
-//  public GeneralResponse<AccountResponseDTO> test() {
-//    TransactionRequestDTO transactionRequestDto = TransactionRequestDTO.builder()
-//        .transactionId(Long.parseLong("123"))
-//        .amount(1000)
-//        .senderAccount("123")
-//        .receiverAccount("456")
-//        .content("Test")
-//        .pinCode("123")
-//        .type(1)
-//        .requestId(Long.parseLong("123"))
-//        .build();
-//    kafkaProducer.sendToKafka(transactionRequestDto);
-//    return accountTransactionClient.test();
-//  }
-
-//  @Channel("payment")
-//  Emitter<String> emitter;
-//  @GET
-//  @Path("/kafka")
-//  public String kafka() {
-//    emitter.send("Di Dan");
-//    return "Di Dan";
-//  }
 
 }

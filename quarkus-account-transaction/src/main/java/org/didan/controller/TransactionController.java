@@ -83,10 +83,10 @@ public class TransactionController {
     return response;
   }
 
-  @GET
-  @Path("/test")
-  public GeneralResponse<AccountResponseDto> test() {
-    AccountResponseDto accountResponseDto = new AccountResponseDto("1234", "523535", "dan", 454.1);
-    return new GeneralResponse<>(200, "Success", accountResponseDto);
-  }
+//  @GET
+//  @Path("/test")
+//  public GeneralResponse<AccountResponseDto> test() {
+//    AccountResponseDto accountResponseDto = new AccountResponseDto("1234", "523535", "dan", 454.1);
+//    return new GeneralResponse<>(200, "Success", accountResponseDto);
+//  }
 }
