@@ -23,10 +23,12 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 
 @Configuration
 public class KafkaConfig {
-  @Value("${kafka.server}")
+  @Value("${kafka.didan.server}")
   private String kafkaServer;
+
   @Bean
   public ProducerFactory<String, TransactionRequestDTO> producerFactory() {
+    System.out.println("kafkaServer: " + kafkaServer);
     Map<String, Object> configProps = new HashMap<>();
     configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
     configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -42,7 +44,7 @@ public class KafkaConfig {
   @Bean
   public ConsumerFactory<String, TransactionRequestDTO> consumerFactory() {
     Map<String, Object> configProps = new HashMap<>();
-    configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+    configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
     configProps.put(ConsumerConfig.GROUP_ID_CONFIG, "payment-in");
     configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
     configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);

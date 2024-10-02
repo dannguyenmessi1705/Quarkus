@@ -1,26 +1,34 @@
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.2
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - didan
   kafka:
-    image: confluentinc/cp-kafka:7.3.2
+    image: docker.io/bitnami/kafka:3.7 # Sử dụng image bitnami/kafka
+    healthcheck:
+      test: kafka-topics.sh --list --bootstrap-server localhost:9092 || exit 1
+      interval: 15s
+      timeout: 10s
+      retries: 3
     ports:
-      - "9092:9092"
+      - "9092:9092" # Port kết nối
+    volumes:
+      - ./kafka_data:/bitnami # Lưu trữ dữ liệu của Kafka trên ổ đĩa
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    depends_on:
-      - zookeeper
+      # KRaft settings
+      - KAFKA_CFG_NODE_ID=0 # Node ID của Kafka Server trong Cluster
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker # Process Roles của Kafka Server trong Cluster (controller, broker)
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093 # Quorum Voters của Kafka Server trong Cluster (<Node_ID>@<Service_name>:9093), Nếu có nhiều Node thì thêm vào sau dấu phẩy
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv # Cluster ID của Kafka Server trong Cluster, nên tạo ngẫu nhiên
+      # Listeners
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093 # Listener của Kafka Server (PLAINTEXT://:9092, CONTROLLER://:9093)
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092 # Advertised Listener của Kafka Server (PLAINTEXT://:9092)
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT # Listener Security Protocol Map của Kafka Server (CONTROLLER:PLAINTEXT, PLAINTEXT:PLAINTEXT)
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER # Controller Listener Names của Kafka Server (CONTROLLER)
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT # Inter Broker Listener Name của Kafka Server (PLAINTEXT)
+      # Clustering (Nếu muốn tạo nhiều Kafka Brokers thì thêm các cấu hình sau)
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3 # Biểu thị Số lượng Replicas của Topic Offsets trong Kafka
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3 # Biểu thị Số lượng Replicas của Topic Transaction State Log trong Kafka
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2 # Biểu thị Số lượng Replicas tối thiểu của Topic Transaction State Log trong Kafka
     networks:
-      - didan
+      - didan # Kết nối mạng để join với các service khác
+
   paymentdb:
     image: mysql:8.0
     container_name: paymentdb
@@ -39,6 +47,7 @@ services:
       MYSQL_PASSWORD: 17052002
     networks:
       - didan
+
   accountdb:
     image: mysql:8.0
     container_name: accountdb
@@ -57,6 +66,7 @@ services:
       MYSQL_PASSWORD: 17052002
     networks:
       - didan
+
   quarkus-payment:
     image: dannguyenmessi/quarkus-payment:v1
     ports:
@@ -65,15 +75,16 @@ services:
         QUARKUS_DATASOURCE_JDBC_URL: jdbc:mysql://paymentdb:3306/paymentdb
         QUARKUS_DATASOURCE_USERNAME: payment
         QUARKUS_DATASOURCE_PASSWORD: 17052002
-        KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+        KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
         QUARKUS_REST_CLIENT_TRANSACTION_API_URL: http://quarkus-account-transaction:8090
     depends_on:
       paymentdb:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - didan
+
   quarkus-account-transaction:
     image: dannguyenmessi/quarkus-account-transaction:v1
     ports:
@@ -82,14 +93,15 @@ services:
         QUARKUS_DATASOURCE_JDBC_URL: jdbc:mysql://accountdb:3306/accountdb
         QUARKUS_DATASOURCE_USERNAME: account
         QUARKUS_DATASOURCE_PASSWORD: 17052002
-        KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+        KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
     depends_on:
       accountdb:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - didan
+
   spring-payment:
     image: dannguyenmessi/spring-payment:v1
     ports:
@@ -98,14 +110,17 @@ services:
         SPRING_DATASOURCE_URL: jdbc:mysql://paymentdb:3306/paymentdb
         SPRING_DATASOURCE_USERNAME: payment
         SPRING_DATASOURCE_PASSWORD: 17052002
-        KAFKA_SERVER: kafka:9092
+        KAFKA_DIDAN_SERVER: "kafka:9092"
+        CLIENT_ENDPOINT_ACCOUNT_TRANSACTION: spring-account-transaction:9010
+        CLIENT_PROTOCOL: http
     depends_on:
       paymentdb:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - didan
+
   spring-account-transaction:
     image: dannguyenmessi/spring-account-transaction:v1
     ports:
@@ -114,12 +129,12 @@ services:
         SPRING_DATASOURCE_URL: jdbc:mysql://accountdb:3306/accountdb
         SPRING_DATASOURCE_USERNAME: account
         SPRING_DATASOURCE_PASSWORD: 17052002
-        KAFKA_SERVER: kafka:9092
+        KAFKA_DIDAN_SERVER: "kafka:9092"
     depends_on:
       accountdb:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - didan
 

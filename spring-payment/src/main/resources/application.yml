@@ -15,4 +15,10 @@ server:
   port: 9000
 
 kafka:
-  server: localhost:9092
+  didan:
+    server: localhost:9092
+
+client:
+  endpoint:
+    account-transaction: http://localhost:9010
+  protocol: http

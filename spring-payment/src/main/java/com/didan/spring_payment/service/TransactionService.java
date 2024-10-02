@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,10 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class TransactionService {
+  @Value("${client.endpoint.account-transaction}")
+  private String accountTransactionEndpoint;
+  @Value("${client.protocol}")
+  private String protocol;
 
   private final KafkaTemplate<String, TransactionRequestDTO> kafkaTemplate;
   private final PaymentRepository paymentRepository;
@@ -64,7 +69,7 @@ public class TransactionService {
     responseDTO.setDetails(new ArrayList<>());
     ResponseEntity<GeneralResponse<Boolean>> senderResponse = restTemplateService.processParameterizedType(
         HttpMethod.POST,
-        "http://localhost:9010/transaction/transfer", null, requestSender,
+        protocol + "://" + accountTransactionEndpoint + "/transaction/transfer", null, requestSender,
         new ParameterizedTypeReference<GeneralResponse<Boolean>>() {});
     boolean isSenderDeducted = senderResponse.getBody().getData();
     if (isSenderDeducted) {
@@ -77,7 +82,7 @@ public class TransactionService {
       TransactionRequestDTO requestReceiver = transactionConvertApi(requestDTO, paymentEntity, 2);
       ResponseEntity<GeneralResponse<Boolean>> receiveResponse = restTemplateService.processParameterizedType(
           HttpMethod.POST,
-          "http://localhost:9010/transaction/transfer", null, requestReceiver,
+          protocol + "://" + accountTransactionEndpoint +"/transaction/transfer", null, requestReceiver,
           new ParameterizedTypeReference<GeneralResponse<Boolean>>() {});
       GeneralResponse<Boolean> isReceiverAdded = receiveResponse.getBody();
       if (isReceiverAdded.getData()) {
@@ -145,7 +150,7 @@ public class TransactionService {
     log.info("Get balance with account number: {}", accountRequestDTO.getAccountNumber());
     ResponseEntity<GeneralResponse<AccountResponseDTO>> response = restTemplateService.processParameterizedType(
         HttpMethod.POST,
-        "http://localhost:9010/transaction/balance", null, accountRequestDTO,
+        protocol + "://" + accountTransactionEndpoint + "/transaction/balance", null, accountRequestDTO,
         new ParameterizedTypeReference<GeneralResponse<AccountResponseDTO>>() {
         });
     return response.getBody();
