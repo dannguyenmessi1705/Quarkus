@@ -1,0 +1,24 @@
+deploymentName: spring-payment-deployment
+serviceName: spring-payment
+appLabel:  spring-payment
+appName: spring-payment
+
+replicaCount: 1
+
+image:
+  repository: dannguyenmessi/spring-payment
+  tag: v1
+
+containerPort: 9000
+
+service:
+  type: LoadBalancer
+  port: 9000
+  targetPort: 9000
+
+quarkus_create_client: false
+spring_create_client: true
+quarkus_app: false
+spring_app: true
+paymentdb: true
+accountdb: false

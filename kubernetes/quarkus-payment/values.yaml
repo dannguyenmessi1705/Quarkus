@@ -1,0 +1,24 @@
+deploymentName: quarkus-payment-deployment
+serviceName: quarkus-payment
+appLabel: quarkus-payment
+appName: quarkus-payment
+
+replicaCount: 1
+
+image:
+  repository: dannguyenmessi/quarkus-payment
+  tag: v1
+
+containerPort: 8080
+
+service:
+  type: LoadBalancer
+  port: 8080
+  targetPort: 8080
+
+quarkus_create_client: true
+spring_create_client: false
+quarkus_app: true
+spring_app: false
+paymentdb: true
+accountdb: false

@@ -1,0 +1,18 @@
+dependencies:
+- name: bank-common
+  repository: file://../bank-common
+  version: 0.1.0
+- name: quarkus-payment
+  repository: file://../quarkus-payment
+  version: 0.1.0
+- name: spring-payment
+  repository: file://../spring-payment
+  version: 0.1.0
+- name: quarkus-account-transaction
+  repository: file://../quarkus-account-transaction
+  version: 0.1.0
+- name: spring-account-transaction
+  repository: file://../spring-account-transaction
+  version: 0.1.0
+digest: sha256:7e8d986abc32ccd548fa30d0be131352861d497752ceca7a2d2b5c02e27d9e16
+generated: "2024-10-05T02:04:04.9823516+07:00"

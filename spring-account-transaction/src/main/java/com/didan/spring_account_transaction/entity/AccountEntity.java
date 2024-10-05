@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Entity(name = "account")
 public class AccountEntity {
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.UUID)
   private String id;
 
   @Column(name = "account_number", nullable = false)

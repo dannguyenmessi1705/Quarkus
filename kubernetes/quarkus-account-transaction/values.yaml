@@ -1,0 +1,24 @@
+deploymentName: quarkus-account-transaction-deployment
+serviceName: quarkus-account-transaction
+appLabel: quarkus-account-transaction
+appName: quarkus-account-transaction
+
+replicaCount: 1
+
+image:
+  repository: dannguyenmessi/quarkus-account-transaction
+  tag: v1
+
+containerPort: 8090
+
+service:
+  type: LoadBalancer
+  port: 8090
+  targetPort: 8090
+
+quarkus_create_client: false
+spring_create_client: false
+quarkus_app: true
+spring_app: false
+paymentdb: false
+accountdb: true

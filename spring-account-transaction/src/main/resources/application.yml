@@ -2,9 +2,9 @@ spring:
   application:
     name: spring-account-transaction
   datasource:
-    url: jdbc:mysql://localhost:3306/quarkus_account_transaction
-    username: root
-    password: 17052002
+    url: jdbc:mysql://${database.host}:${database.port}/${database.name}
+    username: ${database.username}
+    password: ${database.password}
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,5 +15,13 @@ server:
   port: 9010
 
 kafka:
+  host: localhost
+  port: 9092
   didan:
-    server: localhost:9092
+    server: ${kafka.host}:${kafka.port}
+database:
+  host: localhost
+  port: 3306
+  name: accountdb
+  username: root
+  password: 17052002

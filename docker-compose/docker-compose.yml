@@ -7,27 +7,24 @@ services:
       timeout: 10s
       retries: 3
     ports:
-      - "9092:9092" # Port kết nối
+      - "9092:9092"
     volumes:
-      - ./kafka_data:/bitnami # Lưu trữ dữ liệu của Kafka trên ổ đĩa
+      - ./kafka_data:/bitnami
     environment:
-      # KRaft settings
-      - KAFKA_CFG_NODE_ID=0 # Node ID của Kafka Server trong Cluster
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker # Process Roles của Kafka Server trong Cluster (controller, broker)
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093 # Quorum Voters của Kafka Server trong Cluster (<Node_ID>@<Service_name>:9093), Nếu có nhiều Node thì thêm vào sau dấu phẩy
-      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv # Cluster ID của Kafka Server trong Cluster, nên tạo ngẫu nhiên
-      # Listeners
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093 # Listener của Kafka Server (PLAINTEXT://:9092, CONTROLLER://:9093)
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092 # Advertised Listener của Kafka Server (PLAINTEXT://:9092)
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT # Listener Security Protocol Map của Kafka Server (CONTROLLER:PLAINTEXT, PLAINTEXT:PLAINTEXT)
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER # Controller Listener Names của Kafka Server (CONTROLLER)
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT # Inter Broker Listener Name của Kafka Server (PLAINTEXT)
-      # Clustering (Nếu muốn tạo nhiều Kafka Brokers thì thêm các cấu hình sau)
-      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3 # Biểu thị Số lượng Replicas của Topic Offsets trong Kafka
-      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3 # Biểu thị Số lượng Replicas của Topic Transaction State Log trong Kafka
-      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2 # Biểu thị Số lượng Replicas tối thiểu của Topic Transaction State Log trong Kafka
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
     networks:
-      - didan # Kết nối mạng để join với các service khác
+      - didan
 
   paymentdb:
     image: mysql:8.0
@@ -72,11 +69,15 @@ services:
     ports:
       - "8080:8080"
     environment:
-        QUARKUS_DATASOURCE_JDBC_URL: jdbc:mysql://paymentdb:3306/paymentdb
-        QUARKUS_DATASOURCE_USERNAME: payment
-        QUARKUS_DATASOURCE_PASSWORD: 17052002
-        KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
-        QUARKUS_REST_CLIENT_TRANSACTION_API_URL: http://quarkus-account-transaction:8090
+      QUARKUS_APPLICATION_NAME: quarkus-payment
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9092
+      DATABASE_HOST: paymentdb
+      DATABASE_PORT: 3306
+      DATABASE_NAME: paymentdb
+      DATABASE_USERNAME: payment
+      DATABASE_PASSWORD: 17052002
+      QUARKUS_REST_CLIENT_TRANSACTION_API_URL: http://quarkus-account-transaction:8090
     depends_on:
       paymentdb:
         condition: service_healthy
@@ -90,10 +91,14 @@ services:
     ports:
       - "8090:8090"
     environment:
-        QUARKUS_DATASOURCE_JDBC_URL: jdbc:mysql://accountdb:3306/accountdb
-        QUARKUS_DATASOURCE_USERNAME: account
-        QUARKUS_DATASOURCE_PASSWORD: 17052002
-        KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+      QUARKUS_APPLICATION_NAME: quarkus-account-transaction
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9092
+      DATABASE_HOST: accountdb
+      DATABASE_PORT: 3306
+      DATABASE_NAME: accountdb
+      DATABASE_USERNAME: account
+      DATABASE_PASSWORD: 17052002
     depends_on:
       accountdb:
         condition: service_healthy
@@ -107,12 +112,16 @@ services:
     ports:
       - "9000:9000"
     environment:
-        SPRING_DATASOURCE_URL: jdbc:mysql://paymentdb:3306/paymentdb
-        SPRING_DATASOURCE_USERNAME: payment
-        SPRING_DATASOURCE_PASSWORD: 17052002
-        KAFKA_DIDAN_SERVER: "kafka:9092"
-        CLIENT_ENDPOINT_ACCOUNT_TRANSACTION: spring-account-transaction:9010
-        CLIENT_PROTOCOL: http
+      SPRING_APPLICATION_NAME: spring-payment
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9092
+      DATABASE_HOST: paymentdb
+      DATABASE_PORT: 3306
+      DATABASE_NAME: paymentdb
+      DATABASE_USERNAME: payment
+      DATABASE_PASSWORD: 17052002
+      CLIENT_ENDPOINT_ACCOUNT_TRANSACTION: spring-account-transaction:9010
+      CLIENT_PROTOCOL: http
     depends_on:
       paymentdb:
         condition: service_healthy
@@ -126,10 +135,14 @@ services:
     ports:
       - "9010:9010"
     environment:
-        SPRING_DATASOURCE_URL: jdbc:mysql://accountdb:3306/accountdb
-        SPRING_DATASOURCE_USERNAME: account
-        SPRING_DATASOURCE_PASSWORD: 17052002
-        KAFKA_DIDAN_SERVER: "kafka:9092"
+      SPRING_APPLICATION_NAME: spring-account-transaction
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9092
+      DATABASE_HOST: accountdb
+      DATABASE_PORT: 3306
+      DATABASE_NAME: accountdb
+      DATABASE_USERNAME: account
+      DATABASE_PASSWORD: 17052002
     depends_on:
       accountdb:
         condition: service_healthy

@@ -1,0 +1,24 @@
+deploymentName: spring-account-transaction-deployment
+serviceName: spring-account-transaction
+appLabel: spring-account-transaction
+appName: spring-account-transaction
+
+replicaCount: 1
+
+image:
+  repository: dannguyenmessi/spring-account-transaction
+  tag: v1
+
+containerPort: 9010
+
+service:
+  type: LoadBalancer
+  port: 9010
+  targetPort: 9010
+
+quarkus_create_client: false
+spring_create_client: false
+quarkus_app: false
+spring_app: true
+paymentdb: false
+accountdb: true

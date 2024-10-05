@@ -1,0 +1,111 @@
+{{- define "common.deployment" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deploymentName }}
+  labels:
+    app: {{ .Values.appLabel }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.appLabel }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appLabel }}
+    spec:
+      containers:
+        - name: {{ .Values.appLabel }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          env:
+          {{- if .Values.quarkus_create_client }}
+          - name: QUARKUS_REST_CLIENT_TRANSACTION_API_URL
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: QUARKUS_REST_CLIENT_TRANSACTION_API_URL
+          {{- end }}
+          {{- if .Values.spring_create_client }}
+          - name: CLIENT_ENDPOINT_ACCOUNT_TRANSACTION
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: SPRING_REST_CLIENT_TRANSACTION_API_URL
+          - name: CLIENT_PROTOCOL
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: SPRING_REST_CLIENT_PROTOCOL
+          {{- end }}
+          {{- if .Values.quarkus_app }}
+          - name: QUARKUS_APPLICATION_NAME
+            value: {{ .Values.appName }}
+          {{- end }}
+          {{- if .Values.spring_app }}
+          - name: SPRING_APPLICATION_NAME
+            value: {{ .Values.appName }}
+          {{- end }}
+          - name: KAFKA_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: KAFKA_HOST
+          - name: KAFKA_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: KAFKA_PORT
+          {{- if .Values.paymentdb }}
+          - name: DATABASE_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_HOST_PAYMENT
+          - name: DATABASE_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_NAME_PAYMENT
+          - name: DATABASE_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_USERNAME_PAYMENT
+          - name: DATABASE_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_PORT_PAYMENT
+          {{- end }}
+          {{- if .Values.accountdb }}
+          - name: DATABASE_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_HOST_ACCOUNT
+          - name: DATABASE_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_NAME_ACCOUNT
+          - name: DATABASE_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_USERNAME_ACCOUNT
+          - name: DATABASE_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_PORT_ACCOUNT
+          {{- end }}
+          - name: DATABASE_PASSWORD
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.global.configMapName }}
+                key: DATABASE_PASSWORD
+{{- end -}}

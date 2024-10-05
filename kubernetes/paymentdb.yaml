@@ -1,0 +1,43 @@
+apiVersion: apps/v1 # apiVersion dùng để deploy 1 ứng dụng
+kind: Deployment # Loại cấu hình (Deployment) - dùng để deploy 1 ứng dụng
+metadata:
+  name: paymentdb
+  labels:
+    app: paymentdb
+spec:
+  selector:
+    matchLabels:
+      app: paymentdb
+  template:
+    metadata:
+      labels:
+        app: paymentdb
+    spec:
+      containers:
+        - name: paymentdb
+          image: mysql:8.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
+            - name: MYSQL_DATABASE
+              value: paymentdb
+            - name: MYSQL_USER
+              value: payment
+            - name: MYSQL_PASSWORD
+              value: "mysql@123"
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paymentdb
+spec:
+  selector:
+    app: paymentdb
+  type: LoadBalancer
+  ports:
+    - port: 3305
+      targetPort: 3306
+      protocol: TCP

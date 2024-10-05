@@ -1,0 +1,21 @@
+{{- define "common.configmap" -}} # Định nghĩa template configmap
+apiVersion: v1 # Version dành cho ConfigMap
+kind: ConfigMap # Loại cấu hình là ConfigMap
+metadata:
+  name: {{ .Values.global.configMapName }} # Tên ConfigMap, lấy giá trị configmapName từ file values.yaml
+data: # Dữ liệu của ConfigMap
+  QUARKUS_REST_CLIENT_TRANSACTION_API_URL: "{{ .Values.global.quarkus_client }}"
+  SPRING_REST_CLIENT_TRANSACTION_API_URL: "{{ .Values.global.spring_client }}"
+  SPRING_REST_CLIENT_PROTOCOL: "{{ .Values.global.spring_client_protocol }}"
+  KAFKA_HOST: "{{ .Values.global.kafka_host }}"
+  KAFKA_PORT: "{{ .Values.global.kafka_port }}"
+  DATABASE_PORT_PAYMENT: "{{ .Values.global.database_port_payment }}"
+  DATABASE_PORT_ACCOUNT: "{{ .Values.global.database_port_account }}"
+  DATABASE_HOST_PAYMENT: "{{ .Values.global.database_host_payment }}"
+  DATABASE_NAME_PAYMENT: "{{ .Values.global.database_name_payment }}"
+  DATABASE_USERNAME_PAYMENT: "{{ .Values.global.database_username_payment }}"
+  DATABASE_HOST_ACCOUNT: "{{ .Values.global.database_host_account }}"
+  DATABASE_NAME_ACCOUNT: "{{ .Values.global.database_name_account }}"
+  DATABASE_USERNAME_ACCOUNT: "{{ .Values.global.database_username_account }}"
+  DATABASE_PASSWORD: "{{ .Values.global.database_password }}"
+{{- end -}} # Kết thúc định nghĩa template configmap
